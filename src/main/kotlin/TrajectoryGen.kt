@@ -14,19 +14,32 @@ object TrajectoryGen {
 
     private val combinedConstraints = MecanumConstraints(driveConstraints, trackWidth)
 
-    private val startPose = Pose2d(-48.0, -48.0, 90.0.toRadians)
+    val START_WALL = Pose2d(-62.0, -42.0,Math.toRadians(180.0))
+    var START_CENTER = Pose2d(-62.0, -24.0,Math.toRadians(180.0))
+    var RINGS = Pose2d(-24.0, -36.0,Math.toRadians(180.0))
+    var SHOOT = Pose2d(-2.0, -36.0,Math.toRadians(180.0))
+    var ZONE_A = Pose2d(12.0, -60.0,Math.toRadians(180.0)) // could be -90 so overshooting hits the wall
+
+    var ZONE_B = Pose2d(-36.0, 36.0,Math.toRadians(0.0))
+    var ZONE_C = Pose2d(-60.0, 60.0,Math.toRadians(0.0))
+    var PARK = Pose2d(12.0, -36.0,Math.toRadians(0.0))
+
+    var TO_ZONE = Pose2d(-24.0, -60.0,Math.toRadians(180.0))
+    var ZONE_VARIABLE: Pose2d? = null
 
     fun createTrajectory(): ArrayList<Trajectory> {
         val list = ArrayList<Trajectory>()
 
-        val builder1 = TrajectoryBuilder(startPose, startPose.heading, combinedConstraints)
+        val builder1 = TrajectoryBuilder(START_WALL, START_WALL.heading, combinedConstraints)
 
-        builder1.forward(40.0);
+
+        builder1.back(40.0);
 
         // Small Example Routine
-//        builder1
-//            .splineTo(Vector2d(10.0, 10.0), 0.0)
-//            .splineTo(Vector2d(15.0, 15.0), 90.0);
+        builder1
+            .splineTo(Vector2d(0.0, 10.0), 0.0)
+            .splineTo(Vector2d(15.0, 30.0), 0.0)
+            .splineTo(Vector2d(60.0, 36.0),0.0);
 
         list.add(builder1.build())
 
