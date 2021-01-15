@@ -31,17 +31,38 @@ object TrajectoryGen {
         val list = ArrayList<Trajectory>()
 
         val builder1 = TrajectoryBuilder(START_WALL, START_WALL.heading, combinedConstraints)
-
-
         builder1.back(40.0);
-
         // Small Example Routine
         builder1
             .splineTo(Vector2d(0.0, 10.0), 0.0)
             .splineTo(Vector2d(15.0, 30.0), 0.0)
             .splineTo(Vector2d(60.0, 36.0),0.0);
-
         list.add(builder1.build())
+
+
+        val builder2 = TrajectoryBuilder(START_WALL, START_WALL.heading, combinedConstraints)
+        builder2
+            .splineTo(toVector2d(TO_ZONE), TO_ZONE.heading)
+            .splineTo(toVector2d(SHOOT),SHOOT.heading)
+            .build();
+        list.add(builder2.build())
+
+        val builder3 = TrajectoryBuilder(START_WALL, START_WALL.heading, combinedConstraints)
+        builder3
+            .back(1.0)
+            .splineToLinearHeading(TO_ZONE,Math.toRadians(0.0))
+            .splineToLinearHeading(SHOOT,Math.toRadians(90.0))
+            .build();
+        list.add(builder3.build())
+
+        val builder4 = TrajectoryBuilder(START_WALL, START_WALL.heading, combinedConstraints)
+        builder4
+            .back(1.0)
+            .splineTo(toVector2d(TO_ZONE),Math.toRadians(0.0))
+            .splineTo(toVector2d(SHOOT),Math.toRadians(90.0))
+            .build();
+        list.add(builder4.build())
+
 
         return list
     }
@@ -49,6 +70,11 @@ object TrajectoryGen {
     fun drawOffbounds() {
         GraphicsUtil.fillRect(Vector2d(0.0, -63.0), 18.0, 18.0) // robot against the wall
     }
+
+    fun toVector2d(pose: Pose2d): Vector2d {
+        return Vector2d(pose.x,pose.y)
+    }
 }
+
 
 val Double.toRadians get() = (Math.toRadians(this))
