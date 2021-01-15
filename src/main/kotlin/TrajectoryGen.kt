@@ -30,23 +30,7 @@ object TrajectoryGen {
     fun createTrajectory(): ArrayList<Trajectory> {
         val list = ArrayList<Trajectory>()
 
-        val builder1 = TrajectoryBuilder(START_WALL, START_WALL.heading, combinedConstraints)
-        builder1.back(40.0);
-        // Small Example Routine
-        builder1
-            .splineTo(Vector2d(0.0, 10.0), 0.0)
-            .splineTo(Vector2d(15.0, 30.0), 0.0)
-            .splineTo(Vector2d(60.0, 36.0),0.0);
-        list.add(builder1.build())
-
-
-        val builder2 = TrajectoryBuilder(START_WALL, START_WALL.heading, combinedConstraints)
-        builder2
-            .splineTo(toVector2d(TO_ZONE), TO_ZONE.heading)
-            .splineTo(toVector2d(SHOOT),SHOOT.heading)
-            .build();
-        list.add(builder2.build())
-
+        //Constant heading spline
         val builder3 = TrajectoryBuilder(START_WALL, START_WALL.heading, combinedConstraints)
         builder3
             .back(1.0)
@@ -55,13 +39,25 @@ object TrajectoryGen {
             .build();
         list.add(builder3.build())
 
+        // Cool looking trajectory
         val builder4 = TrajectoryBuilder(START_WALL, START_WALL.heading, combinedConstraints)
         builder4
             .back(1.0)
             .splineTo(toVector2d(TO_ZONE),Math.toRadians(0.0))
-            .splineTo(toVector2d(SHOOT),Math.toRadians(90.0))
+            .splineToSplineHeading(SHOOT,Math.toRadians(90.0))
             .build();
         list.add(builder4.build())
+
+        // Start with diagonal
+        val builder5 = TrajectoryBuilder(START_WALL, START_WALL.heading, combinedConstraints)
+        builder5
+            .lineTo(toVector2d(START_WALL.plus(Pose2d(10.0,-10.0,0.0))))
+            .splineToLinearHeading(TO_ZONE,Math.toRadians(0.0))
+            .splineToLinearHeading(SHOOT,Math.toRadians(90.0))
+            .build();
+        list.add(builder5.build())
+
+
 
 
         return list
