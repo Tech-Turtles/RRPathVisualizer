@@ -24,3 +24,8 @@
 
 # IntelliJ
 out/
+.gradle/
+
+.idea/
+
+build/
