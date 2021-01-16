@@ -14,52 +14,74 @@ object TrajectoryGen {
 
     private val combinedConstraints = MecanumConstraints(driveConstraints, trackWidth)
 
+    val ringOffset: Pose2d = Pose2d(2.0,5.0,0.0)
+    val wobbleOffset: Pose2d = Pose2d(-12.0,0.0,0.0)
+
     val START_WALL = Pose2d(-62.0, -42.0,Math.toRadians(180.0))
     var START_CENTER = Pose2d(-62.0, -24.0,Math.toRadians(180.0))
-    var RINGS = Pose2d(-24.0, -36.0,Math.toRadians(180.0))
-    var SHOOT = Pose2d(-2.0, -36.0,Math.toRadians(180.0))
-    var ZONE_A = Pose2d(12.0, -60.0,Math.toRadians(180.0)) // could be -90 so overshooting hits the wall
+    var RINGS = Pose2d(-24.0, -36.0,Math.toRadians(180.0)).plus(ringOffset)
+    var SHOOT = Pose2d(-2.0, -36.0,Math.toRadians(180.0)).plus(ringOffset)
+    var ZONE_A = Pose2d(12.0, -60.0,Math.toRadians(0.0)).plus(wobbleOffset)
+    var ZONE_B = Pose2d(36.0, -36.0,Math.toRadians(0.0)).plus(wobbleOffset)
+    var ZONE_C = Pose2d(60.0, -60.0,Math.toRadians(0.0)).plus(wobbleOffset)
+    var PARK = Pose2d(12.0, -36.0,Math.toRadians(180.0)).plus(ringOffset)
 
-    var ZONE_B = Pose2d(-36.0, 36.0,Math.toRadians(0.0))
-    var ZONE_C = Pose2d(-60.0, 60.0,Math.toRadians(0.0))
-    var PARK = Pose2d(12.0, -36.0,Math.toRadians(0.0))
-
-    var TO_ZONE = Pose2d(-24.0, -60.0,Math.toRadians(180.0))
-    var ZONE_VARIABLE: Pose2d? = null
+    var WALL_WAY = Pose2d(-24.0, -56.0,Math.toRadians(180.0))
+    var WALL_WAY_START = WALL_WAY.plus(Pose2d(-15.0,4.0,0.0))
+    // Configurables.  wobbleTangent should be 0.0 for ZONE_B, -45.0 otherwise
+    var ZONE_VARIABLE: Pose2d = ZONE_C;
+    var wobbleTangent: Double = -45.0
 
     fun createTrajectory(): ArrayList<Trajectory> {
         val list = ArrayList<Trajectory>()
 
-        //Constant heading spline
-        val builder3 = TrajectoryBuilder(START_WALL, START_WALL.heading, combinedConstraints)
-        builder3
-            .back(1.0)
-            .splineToLinearHeading(TO_ZONE,Math.toRadians(0.0))
+        // Start with diagonal 2.5
+        var trajToShoot1: Trajectory =
+            TrajectoryBuilder(START_WALL, START_WALL.heading, combinedConstraints)
+            //.lineTo(toVector2d(START_WALL.plus(Pose2d(10.0,-10.0,0.0))))
+            .lineTo(toVector2d(WALL_WAY_START))
+            .splineToLinearHeading(WALL_WAY,Math.toRadians(0.0))
             .splineToLinearHeading(SHOOT,Math.toRadians(90.0))
             .build();
-        list.add(builder3.build())
+        list.add(trajToShoot1)
 
-        // Cool looking trajectory
-        val builder4 = TrajectoryBuilder(START_WALL, START_WALL.heading, combinedConstraints)
-        builder4
-            .back(1.0)
-            .splineTo(toVector2d(TO_ZONE),Math.toRadians(0.0))
-            .splineToSplineHeading(SHOOT,Math.toRadians(90.0))
+        // Park immediately after shooting
+        var trajToPark: Trajectory =
+            TrajectoryBuilder(trajToShoot1.end(), trajToShoot1.end().heading, combinedConstraints)
+                .splineToSplineHeading(PARK,Math.toRadians(0.0))
+                .build();
+        //list.add(trajToPark)
+
+        // From shooting position to rings pickup
+        var trajPickupRings: Trajectory =
+            TrajectoryBuilder(trajToShoot1.end(), trajToShoot1.end().heading, combinedConstraints)
+            .splineToSplineHeading(RINGS,Math.toRadians(0.0))
             .build();
-        list.add(builder4.build())
+        list.add(trajPickupRings)
 
-        // Start with diagonal
-        val builder5 = TrajectoryBuilder(START_WALL, START_WALL.heading, combinedConstraints)
-        builder5
-            .lineTo(toVector2d(START_WALL.plus(Pose2d(10.0,-10.0,0.0))))
-            .splineToLinearHeading(TO_ZONE,Math.toRadians(0.0))
-            .splineToLinearHeading(SHOOT,Math.toRadians(90.0))
-            .build();
-        list.add(builder5.build())
+        // Second batch of shooting after picking up rings
+        var trajToShoot2: Trajectory =
+            TrajectoryBuilder(trajPickupRings.end(), trajPickupRings.end().heading, combinedConstraints)
+                .splineToSplineHeading(SHOOT,Math.toRadians(0.0))
+                .build();
+        //list.add(trajToShoot2)
 
+        // Drive from start to Zone
+        var trajStartToZone: Trajectory =
+            TrajectoryBuilder(START_WALL, START_WALL.heading, combinedConstraints)
+                //.lineTo(toVector2d(START_WALL.plus(Pose2d(10.0,-10.0,0.0))))
+                .lineTo(toVector2d(WALL_WAY_START))
+                .splineToLinearHeading(WALL_WAY,Math.toRadians(0.0))
+                .splineToSplineHeading(ZONE_VARIABLE,Math.toRadians(wobbleTangent))
+                .build();
+        list.add(trajStartToZone)
 
-
-
+        // Drive from Zone to Shoot1
+        var trajZoneToShoot1: Trajectory =
+            TrajectoryBuilder(trajStartToZone.end(), trajStartToZone.end().heading, combinedConstraints)
+                .lineToLinearHeading(SHOOT)
+                .build();
+        list.add(trajZoneToShoot1)
         return list
     }
 
