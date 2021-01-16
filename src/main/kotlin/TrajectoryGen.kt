@@ -20,11 +20,11 @@ object TrajectoryGen {
     val START_WALL = Pose2d(-62.0, -42.0,Math.toRadians(180.0))
     var START_CENTER = Pose2d(-62.0, -24.0,Math.toRadians(180.0))
     var RINGS = Pose2d(-24.0, -36.0,Math.toRadians(180.0)).plus(ringOffset)
-    var SHOOT = Pose2d(-2.0, -36.0,Math.toRadians(180.0)).plus(ringOffset)
+    var SHOOT = Pose2d(-2.0,  -42.0,Math.toRadians(180.0 - 0.0))
     var ZONE_A = Pose2d(12.0, -60.0,Math.toRadians(0.0)).plus(wobbleOffset)
     var ZONE_B = Pose2d(36.0, -36.0,Math.toRadians(0.0)).plus(wobbleOffset)
     var ZONE_C = Pose2d(60.0, -60.0,Math.toRadians(0.0)).plus(wobbleOffset)
-    var PARK = Pose2d(12.0, -36.0,Math.toRadians(180.0)).plus(ringOffset)
+    var PARK = Pose2d(12.0, -42.0,Math.toRadians(180.0))
 
     var WALL_WAY = Pose2d(-24.0, -56.0,Math.toRadians(180.0))
     var WALL_WAY_START = WALL_WAY.plus(Pose2d(-15.0,4.0,0.0))
@@ -42,29 +42,33 @@ object TrajectoryGen {
             .lineTo(toVector2d(WALL_WAY_START))
             .splineToLinearHeading(WALL_WAY,Math.toRadians(0.0))
             .splineToLinearHeading(SHOOT,Math.toRadians(90.0))
+            //.lineTo(toVector2d(SHOOT))
             .build();
         list.add(trajToShoot1)
 
         // Park immediately after shooting
         var trajToPark: Trajectory =
-            TrajectoryBuilder(trajToShoot1.end(), trajToShoot1.end().heading, combinedConstraints)
+            TrajectoryBuilder(trajToShoot1.end(), trajToShoot1.end().heading* 0.0, combinedConstraints)
                 .splineToSplineHeading(PARK,Math.toRadians(0.0))
                 .build();
-        //list.add(trajToPark)
+        list.add(trajToPark)
 
         // From shooting position to rings pickup
         var trajPickupRings: Trajectory =
             TrajectoryBuilder(trajToShoot1.end(), trajToShoot1.end().heading, combinedConstraints)
-            .splineToSplineHeading(RINGS,Math.toRadians(0.0))
+            //.splineToSplineHeading(RINGS,Math.toRadians(180.0))
+            //.splineToLinearHeading(RINGS,Math.toRadians(180.0))
+            .splineTo(toVector2d(RINGS),Math.toRadians(180.0 - 45.0))
             .build();
         list.add(trajPickupRings)
 
         // Second batch of shooting after picking up rings
         var trajToShoot2: Trajectory =
-            TrajectoryBuilder(trajPickupRings.end(), trajPickupRings.end().heading, combinedConstraints)
-                .splineToSplineHeading(SHOOT,Math.toRadians(0.0))
+            TrajectoryBuilder(trajPickupRings.end(), trajPickupRings.end().heading + Math.toRadians(180.0), combinedConstraints)
+                //.splineToSplineHeading(SHOOT,Math.toRadians(0.0))
+                .splineToLinearHeading(SHOOT,Math.toRadians(0.0))
                 .build();
-        //list.add(trajToShoot2)
+        list.add(trajToShoot2)
 
         // Drive from start to Zone
         var trajStartToZone: Trajectory =
@@ -74,7 +78,7 @@ object TrajectoryGen {
                 .splineToLinearHeading(WALL_WAY,Math.toRadians(0.0))
                 .splineToSplineHeading(ZONE_VARIABLE,Math.toRadians(wobbleTangent))
                 .build();
-        list.add(trajStartToZone)
+        //list.add(trajStartToZone)
 
         // Drive from shoot to Zone
         var trajFromShootToZone: Trajectory =
