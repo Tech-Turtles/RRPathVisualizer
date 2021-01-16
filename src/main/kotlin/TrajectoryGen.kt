@@ -76,12 +76,23 @@ object TrajectoryGen {
                 .build();
         list.add(trajStartToZone)
 
+        // Drive from shoot to Zone
+        var trajFromShootToZone: Trajectory =
+            TrajectoryBuilder(SHOOT, SHOOT.heading, combinedConstraints)
+                //.splineTo(toVector2d(ZONE_VARIABLE),Math.toRadians(wobbleTangent))
+                .lineToLinearHeading(ZONE_VARIABLE)
+                .build();
+        list.add(trajFromShootToZone)
+
         // Drive from Zone to Shoot1
         var trajZoneToShoot1: Trajectory =
             TrajectoryBuilder(trajStartToZone.end(), trajStartToZone.end().heading, combinedConstraints)
                 .lineToLinearHeading(SHOOT)
                 .build();
         list.add(trajZoneToShoot1)
+
+
+
         return list
     }
 
