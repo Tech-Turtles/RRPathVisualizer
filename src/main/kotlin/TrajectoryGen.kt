@@ -143,7 +143,7 @@ object TrajectoryGen {
         val traj_home: Trajectory = trajectoryBuilder(testEnd, Math.toRadians(180.0))
             .splineToSplineHeading(wallGoal, Math.toRadians(180.0))
             .splineToSplineHeading(wallStart, Math.toRadians(180.0))
-            .splineToSplineHeading(park, Math.toRadians(180.0))
+            .splineToLinearHeading(park, Math.toRadians(180.0))
             .build()
         list.add(traj_home)
 
