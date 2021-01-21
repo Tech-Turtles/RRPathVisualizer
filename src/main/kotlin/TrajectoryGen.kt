@@ -5,6 +5,10 @@ import com.acmerobotics.roadrunner.trajectory.TrajectoryBuilder
 import com.acmerobotics.roadrunner.trajectory.constraints.DriveConstraints
 import com.acmerobotics.roadrunner.trajectory.constraints.MecanumConstraints
 
+
+
+
+
 object TrajectoryGen {
     // Remember to set these constraints to the same values as your DriveConstants.java file in the quickstart
     private val driveConstraints = DriveConstraints(60.0, 60.0, 0.0, 270.0.toRadians, 270.0.toRadians, 0.0)
@@ -58,7 +62,7 @@ object TrajectoryGen {
             .splineToLinearHeading(SHOOT,Math.toRadians(90.0))
             //.lineTo(toVector2d(SHOOT))
             .build();
-        list.add(trajToShoot1)
+        //list.add(trajToShoot1)
         this.trajToShoot1 = trajToShoot1
 
         // Powershot!!!
@@ -70,7 +74,7 @@ object TrajectoryGen {
                 .splineToLinearHeading(POWER_SHOT.plus(Pose2d(0.0,24.0,0.0)),Math.toRadians(90.0))
                 //.lineTo(toVector2d(SHOOT))
                 .build();
-        list.add(trajToPOWERSHOT)
+        //list.add(trajToPOWERSHOT)
         this.trajToPOWERSHOT = trajToPOWERSHOT
 
         // Park immediately after shooting
@@ -78,7 +82,7 @@ object TrajectoryGen {
             trajectoryBuilder(trajToShoot1.end(), trajToShoot1.end().heading* 0.0)
                 .splineToSplineHeading(PARK,Math.toRadians(0.0))
                 .build();
-        list.add(trajToPark)
+        //list.add(trajToPark)
         this.trajToPark = trajToPark
 
         // From shooting position to rings pickup
@@ -88,7 +92,7 @@ object TrajectoryGen {
             //.splineToLinearHeading(RINGS,Math.toRadians(180.0))
             .splineTo(toVector2d(RINGS),Math.toRadians(180.0 - 45.0))
             .build();
-        list.add(trajPickupRings)
+        //list.add(trajPickupRings)
         this.trajPickupRings = trajPickupRings
 
         // Second batch of shooting after picking up rings
@@ -97,7 +101,7 @@ object TrajectoryGen {
                 //.splineToSplineHeading(SHOOT,Math.toRadians(0.0))
                 .splineToLinearHeading(SHOOT,Math.toRadians(0.0))
                 .build();
-        list.add(trajToShoot2)
+        //list.add(trajToShoot2)
         this.trajToShoot2 = trajToShoot2
 
         // Drive from start to Zone
@@ -109,7 +113,7 @@ object TrajectoryGen {
                 .splineToSplineHeading(ZONE_VARIABLE,Math.toRadians(wobbleTangent))
                 .build();
         //list.add(trajStartToZone)
-        this.trajStartToZone = trajStartToZone
+        //this.trajStartToZone = trajStartToZone
 
         // Drive from shoot to Zone
         var trajFromShootToZone: Trajectory =
@@ -117,7 +121,7 @@ object TrajectoryGen {
                 //.splineTo(toVector2d(ZONE_VARIABLE),Math.toRadians(wobbleTangent))
                 .lineToLinearHeading(ZONE_VARIABLE)
                 .build();
-        list.add(trajFromShootToZone)
+        //list.add(trajFromShootToZone)
         this.trajFromShootToZone = trajFromShootToZone
 
         // Drive from Zone to Shoot1
@@ -125,9 +129,23 @@ object TrajectoryGen {
             trajectoryBuilder(trajStartToZone.end(), trajStartToZone.end().heading)
                 .lineToLinearHeading(SHOOT)
                 .build();
-        list.add(trajZoneToShoot1)
+        //list.add(trajZoneToShoot1)
         this.trajZoneToShoot1 = trajZoneToShoot1
 
+        val wallY = -56.0
+        val resetHeading = Math.toRadians(180.0)
+        val testEnd: Pose2d = Pose2d(30.0, 10.0,15.0.toRadians)
+        val park = Pose2d(-62.0, -42.0, 180.0.toRadians)
+        val wallGoal = Pose2d(testEnd.x, wallY, resetHeading)
+        val wallStart = Pose2d(park.x + 20.0, wallY, resetHeading)
+
+
+        val traj_home: Trajectory = trajectoryBuilder(testEnd, Math.toRadians(180.0))
+            .splineToSplineHeading(wallGoal, Math.toRadians(180.0))
+            .splineToSplineHeading(wallStart, Math.toRadians(180.0))
+            .splineToSplineHeading(park, Math.toRadians(180.0))
+            .build()
+        list.add(traj_home)
 
 
         return list
