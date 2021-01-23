@@ -4,14 +4,16 @@ import com.acmerobotics.roadrunner.trajectory.Trajectory
 import com.acmerobotics.roadrunner.trajectory.TrajectoryBuilder
 import com.acmerobotics.roadrunner.trajectory.constraints.DriveConstraints
 import com.acmerobotics.roadrunner.trajectory.constraints.MecanumConstraints
-
-
-
+import javafx.scene.paint.Color
+import javafx.scene.paint.Color.color
+import java.util.*
+import kotlin.collections.ArrayList
 
 
 object TrajectoryGen {
     // Remember to set these constraints to the same values as your DriveConstants.java file in the quickstart
     private val driveConstraints = DriveConstraints(60.0, 60.0, 0.0, 270.0.toRadians, 270.0.toRadians, 0.0)
+    private val driveConstraintsSlow = DriveConstraints(20.0, 60.0, 0.0, 270.0.toRadians, 270.0.toRadians, 0.0)
 
     // Remember to set your track width to an estimate of your actual bot to get accurate trajectory profile duration!
     private const val trackWidth = 16.0
@@ -25,6 +27,7 @@ object TrajectoryGen {
     var START_CENTER = Pose2d(-62.0, -24.0,Math.toRadians(180.0))
     var RINGS = Pose2d(-24.0, -36.0,Math.toRadians(180.0)).plus(ringOffset)
     var SHOOT = Pose2d(-2.0,  -42.0,Math.toRadians(180.0 - 0.0))
+    var CENTER_TO_SHOOT = SHOOT.plus(Pose2d(0.0,30.0, 0.0))
     var POWER_SHOT = Pose2d(-2.0,  -28.0,Math.toRadians(180.0 - 0.0))
     var ZONE_A = Pose2d(12.0, -60.0,Math.toRadians(0.0)).plus(wobbleOffset)
     var ZONE_B = Pose2d(36.0, -36.0,Math.toRadians(0.0)).plus(wobbleOffset)
@@ -33,6 +36,7 @@ object TrajectoryGen {
 
     var WALL_WAY = Pose2d(-24.0, -56.0,Math.toRadians(180.0))
     var WALL_WAY_START = WALL_WAY.plus(Pose2d(-15.0,4.0,0.0))
+    var CENTER_WAY_START = Pose2d(-36.0,0.0,180.0.toRadians)
     // Configurables.  wobbleTangent should be 0.0 for ZONE_B, -45.0 otherwise
     var ZONE_VARIABLE: Pose2d = ZONE_C;
     var wobbleTangent: Double = -45.0
@@ -45,6 +49,7 @@ object TrajectoryGen {
     var trajFromShootToZone: Trajectory? = null
     var trajZoneToShoot1: Trajectory? = null
     var trajToPOWERSHOT: Trajectory? = null
+    var traj_powershot_clockwise: Trajectory? = null
 
     val list = ArrayList<Trajectory>()
 
@@ -52,6 +57,7 @@ object TrajectoryGen {
 
     fun createTrajectory(): ArrayList<Trajectory> {
         val list = ArrayList<Trajectory>()
+        val listPowershot = ArrayList<Trajectory>()
 
         // Start with diagonal 2.5
         var trajToShoot1: Trajectory =
@@ -62,7 +68,7 @@ object TrajectoryGen {
             .splineToLinearHeading(SHOOT,Math.toRadians(90.0))
             //.lineTo(toVector2d(SHOOT))
             .build();
-        //list.add(trajToShoot1)
+        list.add(trajToShoot1)
         this.trajToShoot1 = trajToShoot1
 
         // Powershot!!!
@@ -74,7 +80,7 @@ object TrajectoryGen {
                 .splineToLinearHeading(POWER_SHOT.plus(Pose2d(0.0,24.0,0.0)),Math.toRadians(90.0))
                 //.lineTo(toVector2d(SHOOT))
                 .build();
-        //list.add(trajToPOWERSHOT)
+        list.add(trajToPOWERSHOT)
         this.trajToPOWERSHOT = trajToPOWERSHOT
 
         // Park immediately after shooting
@@ -82,7 +88,7 @@ object TrajectoryGen {
             trajectoryBuilder(trajToShoot1.end(), trajToShoot1.end().heading* 0.0)
                 .splineToSplineHeading(PARK,Math.toRadians(0.0))
                 .build();
-        //list.add(trajToPark)
+        list.add(trajToPark)
         this.trajToPark = trajToPark
 
         // From shooting position to rings pickup
@@ -92,7 +98,7 @@ object TrajectoryGen {
             //.splineToLinearHeading(RINGS,Math.toRadians(180.0))
             .splineTo(toVector2d(RINGS),Math.toRadians(180.0 - 45.0))
             .build();
-        //list.add(trajPickupRings)
+        list.add(trajPickupRings)
         this.trajPickupRings = trajPickupRings
 
         // Second batch of shooting after picking up rings
@@ -101,7 +107,7 @@ object TrajectoryGen {
                 //.splineToSplineHeading(SHOOT,Math.toRadians(0.0))
                 .splineToLinearHeading(SHOOT,Math.toRadians(0.0))
                 .build();
-        //list.add(trajToShoot2)
+        list.add(trajToShoot2)
         this.trajToShoot2 = trajToShoot2
 
         // Drive from start to Zone
@@ -129,30 +135,51 @@ object TrajectoryGen {
             trajectoryBuilder(trajStartToZone.end(), trajStartToZone.end().heading)
                 .lineToLinearHeading(SHOOT)
                 .build();
-        //list.add(trajZoneToShoot1)
+        list.add(trajZoneToShoot1)
         this.trajZoneToShoot1 = trajZoneToShoot1
 
         val wallY = -56.0
         val resetHeading = Math.toRadians(180.0)
         val testEnd: Pose2d = Pose2d(30.0, 10.0,15.0.toRadians)
-        val park = Pose2d(-62.0, -42.0, 180.0.toRadians)
+        val startWall = Pose2d(-62.0, -42.0, 180.0.toRadians)
         val wallGoal = Pose2d(testEnd.x, wallY, resetHeading)
-        val wallStart = Pose2d(park.x + 20.0, wallY, resetHeading)
-
+        val wallStart = Pose2d(startWall.x + 20.0, wallY, resetHeading)
 
         val traj_home: Trajectory = trajectoryBuilder(testEnd, Math.toRadians(180.0))
             .splineToSplineHeading(wallGoal, Math.toRadians(180.0))
             .splineToSplineHeading(wallStart, Math.toRadians(180.0))
-            .splineToLinearHeading(park, Math.toRadians(180.0))
+            .splineToLinearHeading(startWall, Math.toRadians(180.0))
             .build()
-        list.add(traj_home)
+        //list.add(traj_home)
 
 
-        return list
+
+        // Clockwise powershot tour
+        var traj_powershot_clockwise: Trajectory =
+            trajectoryBuilder(START_WALL, 90.0.toRadians)
+                .splineToConstantHeading(START_CENTER.vec(),90.0.toRadians)
+                //.splineToConstantHeading(CENTER_WAY_START.vec(),30.0.toRadians)
+                //.splineTo(CENTER_TO_SHOOT.vec(),-90.0.toRadians)
+                .splineToConstantHeading(CENTER_TO_SHOOT.vec(),-90.0.toRadians, driveConstraints)
+                //.splineTo(SHOOT.vec(),-90.0)
+                //.lineTo(SHOOT.vec())
+                .lineTo(SHOOT.vec(), driveConstraintsSlow)
+                .splineToSplineHeading(ZONE_VARIABLE,Math.toRadians(-45.0), driveConstraints)
+                //.splineTo(ZONE_VARIABLE.vec(),Math.toRadians(-45.0))
+                ///.lineToConstantHeading(ZONE_VARIABLE.vec())
+                //.lineTo(toVector2d(SHOOT))
+                .build();
+        //list.add(traj_powershot_clockwise)
+        listPowershot.add(traj_powershot_clockwise)
+        this.traj_powershot_clockwise = traj_powershot_clockwise
+
+        //return list
+        return listPowershot
     }
 
     fun drawOffbounds() {
-        GraphicsUtil.fillRect(Vector2d(0.0, -63.0), 18.0, 18.0) // robot against the wall
+        //GraphicsUtil.setColor(Color.color(0.0,0.0,200.0))
+        GraphicsUtil.fillRect(SHOOT.vec(), 18.0, 18.0) // robot against the wall
     }
 
     fun toVector2d(pose: Pose2d): Vector2d {
