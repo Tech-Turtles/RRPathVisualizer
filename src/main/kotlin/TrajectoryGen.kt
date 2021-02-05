@@ -348,3 +348,13 @@ object TrajectoryGen {
 
 val Double.toRadians get() = (Math.toRadians(this))
 
+/*
+    +x is the 'positive' direction, and rotation is counter-clockwise around (0,0)
+    https://en.wikipedia.org/wiki/Rotation_matrix
+ */
+fun Pose2d.rotateFrame(rotationRadians: Double): Pose2d
+{
+    return Pose2d(this.x * kotlin.math.cos(rotationRadians) - this.y * kotlin.math.sin(rotationRadians),
+        this.x * kotlin.math.sin(rotationRadians) + this.y * kotlin.math.cos(rotationRadians),
+        this.heading + rotationRadians)
+}
