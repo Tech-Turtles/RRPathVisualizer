@@ -63,6 +63,8 @@ class App : Application() {
 
         stage.title = "PathVisualizer"
         stage.isResizable = false
+        stage.x = 1300.0
+        stage.y = 100.0
 
         println("duration $duration")
 
@@ -118,6 +120,7 @@ class App : Application() {
         GraphicsUtil.drawRobotVector(current)
 
         stage.title = "Profile duration : ${"%.2f".format(duration)} - time in profile ${"%.2f".format(profileTime)}"
+
     }
 }
 
