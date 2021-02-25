@@ -4,9 +4,6 @@ import com.acmerobotics.roadrunner.trajectory.Trajectory
 import com.acmerobotics.roadrunner.trajectory.TrajectoryBuilder
 import com.acmerobotics.roadrunner.trajectory.constraints.DriveConstraints
 import com.acmerobotics.roadrunner.trajectory.constraints.MecanumConstraints
-import javafx.scene.paint.Color
-import javafx.scene.paint.Color.color
-import java.util.*
 import kotlin.collections.ArrayList
 import TrajectoryGen.RingDetectionAmount.*
 
@@ -146,6 +143,14 @@ object TrajectoryGen {
     var trajRingGrabToShootHighGoal: Trajectory? = null
     var trajFromShootHighGoalToPark: Trajectory? = null
 
+
+    // 5 trajectories to support high goal and highgoal + ring pickup trajectories
+    var trajCenterStartToHighGoal: Trajectory? = null
+    var trajHighGoalToRingAlign: Trajectory? = null
+    var trajRingAlignToRingPickup: Trajectory? = null
+    var trajRingPickupToHighGoal: Trajectory? = null
+    //var trajHighGoalToWobbleDropoffDeep: Trajectory? = null // Already defined elsewhere
+
     val list = ArrayList<Trajectory>()
 
 
@@ -154,7 +159,8 @@ object TrajectoryGen {
         val list = ArrayList<Trajectory>()
         val listPowershot = ArrayList<Trajectory>()
         val listTest = ArrayList<Trajectory>()
-        setZone(ZERO)
+        val listHighGoal = ArrayList<Trajectory>()
+        setZone(FOUR)
         // Note that powershot path ZERO doesn't park well
         System.out.println("Angle:   " + Math.toDegrees( angleFromTo(RINGS_ACTUAL, SHOOT_HIGHGOAL)).toString())
 
@@ -535,15 +541,88 @@ object TrajectoryGen {
                         .build()
             };
 
-
-
         //list.add(trajParkAfterWobbleDropoff)
         //listPowershot.add(trajParkAfterWobbleDropoff)
         this.trajParkAfterWobbleDropoff = trajParkAfterWobbleDropoff
 
+
+        /*
+           5 new trajectories for doing high shot and optionally rings pickup
+            trajCenterStartToHighGoal
+            trajHighGoalToRingAlign
+            trajRingAlignToRingPickup // equates with trajRingAlignToRingGrab
+            trajRingPickupToHighGoal // equates to trajRingGrabToShootHighGoal
+            trajHighGoalToWobbleDropoffDeep
+         */
+
+        // Start Center to HighGoal shoot position
+        // Calculate x position for smooth turn around rings
+        val xPositionWeighted = (2.0 * RINGS_ACTUAL.x + 1.0 * SHOOT_HIGHGOAL.x) / 3.0
+        val ringLeftToHighGoal = Pose2d(xPositionWeighted, START_CENTER.y,0.0.toRadians);
+        var trajCenterStartToHighGoal: Trajectory =
+            trajectoryBuilder(START_CENTER, 0.0.toRadians)
+                .splineTo(ringLeftToHighGoal.vec(), 0.0.toRadians)
+                .splineToLinearHeading(SHOOT_HIGHGOAL, -80.0.toRadians) // Approach direction
+                //.splineTo(ringLeftToHighGoal)
+                //.(SHOOT_HIGHGOAL)
+                //.lineToLinearHeading(SHOOT_HIGHGOAL)
+                .build();
+        listHighGoal.add(trajCenterStartToHighGoal)
+        this.trajCenterStartToHighGoal = trajCenterStartToHighGoal
+
+
+        // High Goal to Ring Align
+        var trajHighGoalToRingAlign: Trajectory =
+            trajectoryBuilder(SHOOT_HIGHGOAL, 180.0.toRadians)
+                .lineToLinearHeading(ringPickupAlign)
+                .build();
+        listHighGoal.add(trajHighGoalToRingAlign)
+        this.trajHighGoalToRingAlign = trajHighGoalToRingAlign
+
+
+        // RingAlign to  Ring Pickup     --- OLD TRAJECTORY
+        var trajRingAlignToRingPickup: Trajectory =
+            trajRingAlignToRingGrab
+        listHighGoal.add(trajRingAlignToRingGrab)
+        this.trajRingAlignToRingPickup = trajRingAlignToRingPickup
+
+
+        // Ring pickup to high goal     --- OLD TRAJECTORY
+        var trajRingPickupToHighGoal: Trajectory =
+            trajRingGrabToShootHighGoal
+        listHighGoal.add(trajRingGrabToShootHighGoal)
+        this.trajRingPickupToHighGoal = trajRingPickupToHighGoal
+
+        // High Goal to Wobble Drop (NOT created elsewhere)
+        var trajHighGoalToWobbleDropoffDeep: Trajectory =
+        when(ZONE_CENTER_VARIABLE) {
+            ZONE_A_CENTER ->
+                trajectoryBuilder(trajRingPickupToHighGoal.end(), -60.0.toRadians)
+                    .splineToSplineHeading(wobbleDropoffDeep.plus(Pose2d(0.0,6.0,0.0)),Math.toRadians(-90.0))
+                    .lineToConstantHeading(wobbleDropoffDeep.vec())
+                    .build();
+            ZONE_B_CENTER ->
+                trajectoryBuilder(trajRingPickupToHighGoal.end(), 30.0.toRadians)
+                    //.lineToLinearHeading(wobbleDropoffDeep)
+                    .splineToSplineHeading(wobbleDropoffAlign,0.0)
+                    .lineToConstantHeading(wobbleDropoffDeep.vec())
+                    .build();
+            else -> // Zone C
+                trajectoryBuilder(trajRingPickupToHighGoal.end(), 0.0.toRadians)
+                    //TODO: Improve Zone C, prevent arm conflict with wall
+                    //.splineToSplineHeading(wobbleDropoffAlign.plus(Pose2d(0.0,10.0,0.0)),0.0)
+                    //.lineToConstantHeading(wobbleDropoffDeep.vec())
+                    .lineToLinearHeading(wobbleDropoffDeep)
+                    //.splineToLinearHeading(wobbleDropoffDeep,-45.0.toRadians)
+                    .build();
+        }
+        listHighGoal.add(trajHighGoalToWobbleDropoffDeep)
+        this.trajHighGoalToWobbleDropoffDeep = trajHighGoalToWobbleDropoffDeep
+
         //return list
         //return listPowershot
-        return listTest
+        //return listTest
+        return listHighGoal
     }
 
     fun drawOffbounds() {
