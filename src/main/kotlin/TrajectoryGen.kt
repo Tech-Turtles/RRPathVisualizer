@@ -24,10 +24,11 @@ object TrajectoryGen {
     /*
     Offset system
      */
+    val dropoffLateralOffset: Double = 4.0
     val offsetWobbleArmReach: Double = 12.0
-    val offsetWobbleDropoffAlign = Pose2d(-offsetWobbleArmReach - 6.0,0.0,0.0)
-    val offsetWobbleDropoffDeep = Pose2d(-offsetWobbleArmReach + 2.0,0.0,0.0)
-    val offsetWobbleDropoffShallow = Pose2d(-offsetWobbleArmReach - 2.0,0.0,0.0)
+    val offsetWobbleDropoffAlign = Pose2d(-offsetWobbleArmReach - 6.0,dropoffLateralOffset,0.0)
+    val offsetWobbleDropoffDeep = Pose2d(-offsetWobbleArmReach + 2.0,dropoffLateralOffset,0.0)
+    val offsetWobbleDropoffShallow = Pose2d(-offsetWobbleArmReach - 2.0,dropoffLateralOffset,0.0)
     val wobbleDropoffRotationRadians: Double = 0.0.toRadians
 
     val offsetWobblePickupAlign = Pose2d(-offsetWobbleArmReach - 8.0,0.0,0.0)
@@ -127,6 +128,13 @@ object TrajectoryGen {
     var trajParkAfterWobbleDropoff: Trajectory? = null
     var trajPickupRingsFromZone: Trajectory? = null
 
+    // Pickup rings after powershot but before first wobble pickup
+    //var traj_PowershotRightToWobbleDropoff: Trajectory? = null
+    var trajPowershotRightToRingPickupAlign: Trajectory? = null
+    // high goal shooting?
+    var trajHighGoalToWobbleDropoffDeep: Trajectory? = null
+    //var trajWobbleDropoffToWobblePickupAlign: Trajectory? = null
+
 
     var trajWobbleDropoffToWobblePickupAlign: Trajectory? = null
     var trajWobbleAlignToWobblePickup: Trajectory? = null
@@ -148,6 +156,7 @@ object TrajectoryGen {
         val listTest = ArrayList<Trajectory>()
         setZone(ZERO)
         // Note that powershot path ZERO doesn't park well
+        System.out.println("Angle:   " + Math.toDegrees( angleFromTo(RINGS_ACTUAL, SHOOT_HIGHGOAL)).toString())
 
         // Start with diagonal 2.5
         var trajToShoot1: Trajectory =
@@ -533,8 +542,8 @@ object TrajectoryGen {
         this.trajParkAfterWobbleDropoff = trajParkAfterWobbleDropoff
 
         //return list
-        return listPowershot
-        //return listTest
+        //return listPowershot
+        return listTest
     }
 
     fun drawOffbounds() {
@@ -578,6 +587,13 @@ object TrajectoryGen {
         ZERO, ONE, FOUR
     }
 
+    fun angleFromTo(fromPose: Vector2d, toPose: Vector2d): Double {
+       return Math.atan2(toPose.y - fromPose.y, toPose.x - fromPose.x);
+    }
+
+    fun angleFromTo(fromPose: Pose2d, toPose: Pose2d): Double {
+        return angleFromTo(fromPose.vec(),toPose.vec());
+    }
 }
 
 
