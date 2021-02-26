@@ -158,7 +158,6 @@ object TrajectoryGen {
         val listPickupTest = ArrayList<Trajectory>()
         val listHighGoal = ArrayList<Trajectory>()
         setZone(FOUR)
-        // Note that powershot path ZERO doesn't park well
         System.out.println("Angle:   " + Math.toDegrees( angleFromTo(RINGS_ACTUAL, SHOOT_HIGHGOAL)).toString())
 
         // Start with diagonal 2.5
@@ -333,6 +332,56 @@ object TrajectoryGen {
         this.traj_PowershotCenterPowershotRight = traj_PowershotCenterPowershotRight
 
 
+        /*
+             Option: From powershot_right go to ring pickup
+         */
+        // Powershot Right to Ring Align
+        var trajPowershotRightToRingPickupAlign: Trajectory =
+            trajectoryBuilder(traj_PowershotCenterPowershotRight.end(), -90.0.toRadians)
+                .lineToLinearHeading(ringPickupAlign)
+                .build();
+        listPowershot.add(trajPowershotRightToRingPickupAlign)
+        listPickupTest.add(trajPowershotRightToRingPickupAlign)
+        this.trajPowershotRightToRingPickupAlign = trajPowershotRightToRingPickupAlign
+
+
+        // Pickup Rings
+        var trajRingAlignToRingGrab: Trajectory =
+            trajectoryBuilder(ringPickupAlign, 0.0.toRadians)
+                .lineToConstantHeading(ringPickupGrab.vec())
+                .build();
+        listPowershot.add(trajRingAlignToRingGrab)
+        listPickupTest.add(trajRingAlignToRingGrab)
+        this.trajRingAlignToRingGrab = trajRingAlignToRingGrab
+
+
+        // Take picked up rings to shoot
+        var trajRingGrabToShootHighGoal: Trajectory =
+            trajectoryBuilder(trajRingAlignToRingGrab.end(), 0.0.toRadians)
+                .lineToConstantHeading(ringPickupAlign.vec())
+                .splineToSplineHeading(SHOOT_HIGHGOAL,0.0)
+                .build();
+        listPowershot.add(trajRingGrabToShootHighGoal)
+        listPickupTest.add(trajRingGrabToShootHighGoal)
+        this.trajRingGrabToShootHighGoal = trajRingGrabToShootHighGoal
+
+
+        // After shooting into highgoal, go park
+        // Probably not going to use this, with pickup mid-route instead.
+        var trajFromShootHighGoalToPark: Trajectory =
+            trajectoryBuilder(trajRingGrabToShootHighGoal.end(), 0.0.toRadians)
+                .lineToLinearHeading(PARK)
+                .build();
+        //listPowershot.add(trajFromShootHighGoalToPark)
+        //listPickupTest.add(trajFromShootHighGoalToPark)
+        this.trajFromShootHighGoalToPark = trajFromShootHighGoalToPark
+
+
+
+
+        /*
+            If skipping rings, go straight to wobble dropoff
+         */
         var traj_PowershotRightToWobbleDropoff: Trajectory =
             when(ZONE_CENTER_VARIABLE) {
                 ZONE_A_CENTER ->
@@ -417,11 +466,10 @@ object TrajectoryGen {
                 .lineToConstantHeading(wobbleDropoffShallow.vec())
                 .build();
         listPowershot.add(trajWobbleAlignToSecondDropoff)
-        listPickupTest.add(trajWobbleAlignToSecondDropoff)
         this.trajWobbleAlignToSecondDropoff = trajWobbleAlignToSecondDropoff
 
 
-        // Second WobbleGoal to Park (safe option)
+        // Second WobbleGoal to Park (best option)
         var trajSecondWobbleDropoffToPark: Trajectory =
             when(ZONE_CENTER_VARIABLE) {
                 ZONE_A_CENTER ->
@@ -439,6 +487,7 @@ object TrajectoryGen {
 
 
         // Second WobbleGoal to Ring Pickup Align
+        // Probably not going to use this, with pickup mid-route instead.
         var trajSecondWobbleDropoffToRingPickupAlign: Trajectory =
             when(ZONE_CENTER_VARIABLE) {
                 ZONE_A_CENTER ->
@@ -452,45 +501,15 @@ object TrajectoryGen {
                         .lineToLinearHeading(ringPickupAlign)
                         .build();
             }
-        listPowershot.add(trajSecondWobbleDropoffToRingPickupAlign)
-        listPickupTest.add(trajSecondWobbleDropoffToRingPickupAlign)
+        //listPowershot.add(trajSecondWobbleDropoffToRingPickupAlign)
+        //listPickupTest.add(trajSecondWobbleDropoffToRingPickupAlign)
         this.trajSecondWobbleDropoffToRingPickupAlign = trajSecondWobbleDropoffToRingPickupAlign
 
 
-        // Pickup Rings
-        var trajRingAlignToRingGrab: Trajectory =
-            trajectoryBuilder(trajSecondWobbleDropoffToRingPickupAlign.end(), 0.0.toRadians)
-                .lineToConstantHeading(ringPickupGrab.vec())
-                .build();
-        listPowershot.add(trajRingAlignToRingGrab)
-        listPickupTest.add(trajRingAlignToRingGrab)
-        this.trajRingAlignToRingGrab = trajRingAlignToRingGrab
 
 
-        // Take picked up rings to shoot
-        var trajRingGrabToShootHighGoal: Trajectory =
-            trajectoryBuilder(trajRingAlignToRingGrab.end(), 0.0.toRadians)
-                .lineToConstantHeading(ringPickupAlign.vec())
-                .splineToSplineHeading(SHOOT_HIGHGOAL,0.0)
-                .build();
-        listPowershot.add(trajRingGrabToShootHighGoal)
-        listPickupTest.add(trajRingGrabToShootHighGoal)
-        this.trajRingGrabToShootHighGoal = trajRingGrabToShootHighGoal
-
-
-        // After shooting into highgoal, go park
-        var trajFromShootHighGoalToPark: Trajectory =
-            trajectoryBuilder(trajRingGrabToShootHighGoal.end(), 0.0.toRadians)
-                .lineToLinearHeading(PARK)
-                .build();
-        listPowershot.add(trajFromShootHighGoalToPark)
-        listPickupTest.add(trajFromShootHighGoalToPark)
-        this.trajFromShootHighGoalToPark = trajFromShootHighGoalToPark
-
-
-
-        //
         // From zone wobble dropoff position to rings pickup
+        // Probably not going to use this, with pickup mid-route instead.
         var trajPickupRingsFromZone: Trajectory =
             trajectoryBuilder(traj_powershot_clockwise.end(), (wobbleTangent + 180.0).toRadians)
                 .splineToSplineHeading(SHOOT,180.0.toRadians)
@@ -616,16 +635,18 @@ object TrajectoryGen {
         }
         listHighGoal.add(trajHighGoalToWobbleDropoffDeep)
         this.trajHighGoalToWobbleDropoffDeep = trajHighGoalToWobbleDropoffDeep
+        listPickupTest.add(trajHighGoalToWobbleDropoffDeep)
+        listPowershot.add(trajHighGoalToWobbleDropoffDeep)
 
 
         // Adding the remaining powershot trajectories after first wobble dropoff
-        listHighGoal.addAll(listPowershot.subList(5,10))
+        listHighGoal.addAll(listPowershot.subList(8,13))
 
 
         //return list
-        //return listPowershot
+        return listPowershot
         //return listPickupTest
-        return listHighGoal
+        //return listHighGoal
     }
 
     fun drawOffbounds() {
