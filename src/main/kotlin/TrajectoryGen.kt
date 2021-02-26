@@ -624,6 +624,11 @@ object TrajectoryGen {
         listHighGoal.add(trajHighGoalToWobbleDropoffDeep)
         this.trajHighGoalToWobbleDropoffDeep = trajHighGoalToWobbleDropoffDeep
 
+
+        // Adding the remaining powershot trajectories after first wobble dropoff
+        listHighGoal.addAll(listPowershot.subList(5,10))
+
+
         //return list
         //return listPowershot
         //return listPickupTest
