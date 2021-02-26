@@ -126,11 +126,8 @@ object TrajectoryGen {
     var trajPickupRingsFromZone: Trajectory? = null
 
     // Pickup rings after powershot but before first wobble pickup
-    //var traj_PowershotRightToWobbleDropoff: Trajectory? = null
+    //trajPowershotRightToWobbleDropoff // Defined above
     var trajPowershotRightToRingPickupAlign: Trajectory? = null
-    // high goal shooting?
-    var trajHighGoalToWobbleDropoffDeep: Trajectory? = null
-    //var trajWobbleDropoffToWobblePickupAlign: Trajectory? = null
 
 
     var trajWobbleDropoffToWobblePickupAlign: Trajectory? = null
@@ -147,9 +144,9 @@ object TrajectoryGen {
     // 5 trajectories to support high goal and highgoal + ring pickup trajectories
     var trajCenterStartToHighGoal: Trajectory? = null
     var trajHighGoalToRingAlign: Trajectory? = null
-    var trajRingAlignToRingPickup: Trajectory? = null
-    var trajRingPickupToHighGoal: Trajectory? = null
-    //var trajHighGoalToWobbleDropoffDeep: Trajectory? = null // Already defined elsewhere
+    //trajRingAlignToRingGrab already defined (vs new unused name trajRingAlignToRingPickup)
+    //trajRingGrabToShootHighGoal already defined (vs new unused name trajRingPickupToHighGoal)
+    var trajHighGoalToWobbleDropoffDeep: Trajectory? = null
 
     val list = ArrayList<Trajectory>()
 
@@ -550,8 +547,8 @@ object TrajectoryGen {
            5 new trajectories for doing high shot and optionally rings pickup
             trajCenterStartToHighGoal
             trajHighGoalToRingAlign
-            trajRingAlignToRingPickup // equates with trajRingAlignToRingGrab
-            trajRingPickupToHighGoal // equates to trajRingGrabToShootHighGoal
+            trajRingAlignToRingGrab // Already defined
+            trajRingGrabToShootHighGoal // Already defined
             trajHighGoalToWobbleDropoffDeep
          */
 
@@ -581,24 +578,20 @@ object TrajectoryGen {
 
 
         // RingAlign to  Ring Pickup     --- OLD TRAJECTORY
-        var trajRingAlignToRingPickup: Trajectory =
-            trajRingAlignToRingGrab
+        // trajRingAlignToRingGrab
         listHighGoal.add(trajRingAlignToRingGrab)
-        this.trajRingAlignToRingPickup = trajRingAlignToRingPickup
 
 
         // Ring pickup to high goal     --- OLD TRAJECTORY
-        var trajRingPickupToHighGoal: Trajectory =
-            trajRingGrabToShootHighGoal
+        // trajRingGrabToShootHighGoal
         listHighGoal.add(trajRingGrabToShootHighGoal)
-        this.trajRingPickupToHighGoal = trajRingPickupToHighGoal
 
 
         // High Goal to Wobble Drop (NOT created elsewhere)
         var trajHighGoalToWobbleDropoffDeep: Trajectory =
         when(ZONE_CENTER_VARIABLE) {
             ZONE_A_CENTER ->
-                trajectoryBuilder(trajRingPickupToHighGoal.end(), -60.0.toRadians)
+                trajectoryBuilder(trajRingGrabToShootHighGoal.end(), -60.0.toRadians)
                 // SIMPLE OPTION - turns wrong way near the wall
                     //.splineToSplineHeading(wobbleDropoffDeep.plus(Pose2d(0.0,6.0,0.0)),Math.toRadians(-90.0))
                     //.lineToConstantHeading(wobbleDropoffDeep.vec())
@@ -607,13 +600,13 @@ object TrajectoryGen {
                     .lineToSplineHeading(wobbleDropoffDeep)
                     .build();
             ZONE_B_CENTER ->
-                trajectoryBuilder(trajRingPickupToHighGoal.end(), 30.0.toRadians)
+                trajectoryBuilder(trajRingGrabToShootHighGoal.end(), 30.0.toRadians)
                     //.lineToLinearHeading(wobbleDropoffDeep)
                     .splineToSplineHeading(wobbleDropoffAlign,0.0)
                     .lineToConstantHeading(wobbleDropoffDeep.vec())
                     .build();
             else -> // Zone C
-                trajectoryBuilder(trajRingPickupToHighGoal.end(), -20.0.toRadians)
+                trajectoryBuilder(trajRingGrabToShootHighGoal.end(), -20.0.toRadians)
                 // SIMPLE OPTION - turns wrong way near the wall
                     //.lineToLinearHeading(wobbleDropoffDeep)
                 // FANCY OPTION - turns away from the wall
@@ -630,9 +623,9 @@ object TrajectoryGen {
 
 
         //return list
-        return listPowershot
+        //return listPowershot
         //return listPickupTest
-        //return listHighGoal
+        return listHighGoal
     }
 
     fun drawOffbounds() {
