@@ -349,12 +349,12 @@ object TrajectoryGen {
                         .lineToConstantHeading(wobbleDropoffDeep.vec())
                         .build();
                 else -> // Zone C
-                    trajectoryBuilder(traj_PowershotCenterPowershotRight.end(), 0.0.toRadians)
-                            //TODO: Improve Zone C, prevent arm conflict with wall
-                        //.splineToSplineHeading(wobbleDropoffAlign.plus(Pose2d(0.0,10.0,0.0)),0.0)
-                        //.lineToConstantHeading(wobbleDropoffDeep.vec())
-                        .lineToLinearHeading(wobbleDropoffDeep)
-                        //.splineToLinearHeading(wobbleDropoffDeep,-45.0.toRadians)
+                    trajectoryBuilder(traj_PowershotCenterPowershotRight.end(), -40.0.toRadians)
+                    // SIMPLE OPTION - turns wrong way near the wall
+                        //.lineToLinearHeading(wobbleDropoffDeep)
+                    // FANCY OPTION - turns away from the wall
+                        .splineToSplineHeading(wobbleDropoffDeep.plus(Pose2d(-15.0,5.0,1.0.toRadians)), -20.0.toRadians)
+                        .splineToSplineHeading(wobbleDropoffDeep,-20.0.toRadians)
                         .build();
             }
         listPowershot.add(traj_PowershotRightToWobbleDropoff)
@@ -630,9 +630,9 @@ object TrajectoryGen {
 
 
         //return list
-        //return listPowershot
+        return listPowershot
         //return listPickupTest
-        return listHighGoal
+        //return listHighGoal
     }
 
     fun drawOffbounds() {
