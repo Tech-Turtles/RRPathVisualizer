@@ -158,7 +158,7 @@ object TrajectoryGen {
     fun createTrajectory(): ArrayList<Trajectory> {
         val list = ArrayList<Trajectory>()
         val listPowershot = ArrayList<Trajectory>()
-        val listTest = ArrayList<Trajectory>()
+        val listPickupTest = ArrayList<Trajectory>()
         val listHighGoal = ArrayList<Trajectory>()
         setZone(FOUR)
         // Note that powershot path ZERO doesn't park well
@@ -420,7 +420,7 @@ object TrajectoryGen {
                 .lineToConstantHeading(wobbleDropoffShallow.vec())
                 .build();
         listPowershot.add(trajWobbleAlignToSecondDropoff)
-        listTest.add(trajWobbleAlignToSecondDropoff)
+        listPickupTest.add(trajWobbleAlignToSecondDropoff)
         this.trajWobbleAlignToSecondDropoff = trajWobbleAlignToSecondDropoff
 
 
@@ -456,7 +456,7 @@ object TrajectoryGen {
                         .build();
             }
         listPowershot.add(trajSecondWobbleDropoffToRingPickupAlign)
-        listTest.add(trajSecondWobbleDropoffToRingPickupAlign)
+        listPickupTest.add(trajSecondWobbleDropoffToRingPickupAlign)
         this.trajSecondWobbleDropoffToRingPickupAlign = trajSecondWobbleDropoffToRingPickupAlign
 
 
@@ -466,7 +466,7 @@ object TrajectoryGen {
                 .lineToConstantHeading(ringPickupGrab.vec())
                 .build();
         listPowershot.add(trajRingAlignToRingGrab)
-        listTest.add(trajRingAlignToRingGrab)
+        listPickupTest.add(trajRingAlignToRingGrab)
         this.trajRingAlignToRingGrab = trajRingAlignToRingGrab
 
 
@@ -477,7 +477,7 @@ object TrajectoryGen {
                 .splineToSplineHeading(SHOOT_HIGHGOAL,0.0)
                 .build();
         listPowershot.add(trajRingGrabToShootHighGoal)
-        listTest.add(trajRingGrabToShootHighGoal)
+        listPickupTest.add(trajRingGrabToShootHighGoal)
         this.trajRingGrabToShootHighGoal = trajRingGrabToShootHighGoal
 
 
@@ -487,7 +487,7 @@ object TrajectoryGen {
                 .lineToLinearHeading(PARK)
                 .build();
         listPowershot.add(trajFromShootHighGoalToPark)
-        listTest.add(trajFromShootHighGoalToPark)
+        listPickupTest.add(trajFromShootHighGoalToPark)
         this.trajFromShootHighGoalToPark = trajFromShootHighGoalToPark
 
 
@@ -593,13 +593,18 @@ object TrajectoryGen {
         listHighGoal.add(trajRingGrabToShootHighGoal)
         this.trajRingPickupToHighGoal = trajRingPickupToHighGoal
 
+
         // High Goal to Wobble Drop (NOT created elsewhere)
         var trajHighGoalToWobbleDropoffDeep: Trajectory =
         when(ZONE_CENTER_VARIABLE) {
             ZONE_A_CENTER ->
                 trajectoryBuilder(trajRingPickupToHighGoal.end(), -60.0.toRadians)
-                    .splineToSplineHeading(wobbleDropoffDeep.plus(Pose2d(0.0,6.0,0.0)),Math.toRadians(-90.0))
-                    .lineToConstantHeading(wobbleDropoffDeep.vec())
+                // SIMPLE OPTION - turns wrong way near the wall
+                    //.splineToSplineHeading(wobbleDropoffDeep.plus(Pose2d(0.0,6.0,0.0)),Math.toRadians(-90.0))
+                    //.lineToConstantHeading(wobbleDropoffDeep.vec())
+                // FANCY OPTION - turns away from the wall
+                    .splineToSplineHeading(wobbleDropoffDeep.plus(Pose2d(0.0,6.0,1.0.toRadians)),Math.toRadians(-90.0))
+                    .lineToSplineHeading(wobbleDropoffDeep)
                     .build();
             ZONE_B_CENTER ->
                 trajectoryBuilder(trajRingPickupToHighGoal.end(), 30.0.toRadians)
@@ -608,12 +613,12 @@ object TrajectoryGen {
                     .lineToConstantHeading(wobbleDropoffDeep.vec())
                     .build();
             else -> // Zone C
-                trajectoryBuilder(trajRingPickupToHighGoal.end(), 0.0.toRadians)
-                    //TODO: Improve Zone C, prevent arm conflict with wall
-                    //.splineToSplineHeading(wobbleDropoffAlign.plus(Pose2d(0.0,10.0,0.0)),0.0)
-                    //.lineToConstantHeading(wobbleDropoffDeep.vec())
-                    .lineToLinearHeading(wobbleDropoffDeep)
-                    //.splineToLinearHeading(wobbleDropoffDeep,-45.0.toRadians)
+                trajectoryBuilder(trajRingPickupToHighGoal.end(), -20.0.toRadians)
+                // SIMPLE OPTION - turns wrong way near the wall
+                    //.lineToLinearHeading(wobbleDropoffDeep)
+                // FANCY OPTION - turns away from the wall
+                    .splineToSplineHeading(wobbleDropoffDeep.plus(Pose2d(-20.0,3.0,1.0.toRadians)), -20.0.toRadians)
+                    .splineToSplineHeading(wobbleDropoffDeep,0.0.toRadians)
                     .build();
         }
         listHighGoal.add(trajHighGoalToWobbleDropoffDeep)
@@ -621,7 +626,7 @@ object TrajectoryGen {
 
         //return list
         //return listPowershot
-        //return listTest
+        //return listPickupTest
         return listHighGoal
     }
 
