@@ -94,6 +94,7 @@ object TrajectoryGen {
     var ZONE_C = ZONE_C_CENTER.plus(wobbleOffset)
     var PARK = Pose2d(12.0, -42.0,Math.toRadians(180.0))
     var WOBBLE_WALL = Pose2d(-48.0, -50.0,Math.toRadians(180.0)).plus(wobblePickup)
+    var PARK_RAMP = Pose2d(12.0, +10.0,Math.toRadians(0.0))
 
 
     var WALL_WAY = Pose2d(-24.0, -56.0,Math.toRadians(180.0))
@@ -139,6 +140,8 @@ object TrajectoryGen {
     var trajRingAlignToRingGrab: Trajectory? = null
     var trajRingGrabToShootHighGoal: Trajectory? = null
     var trajFromShootHighGoalToPark: Trajectory? = null
+    // Park early if pickup fails
+    var trajWobblePickupToEarlyPark: Trajectory? = null
 
 
     // 5 trajectories to support high goal and highgoal + ring pickup trajectories
@@ -157,6 +160,7 @@ object TrajectoryGen {
         val listPowershot = ArrayList<Trajectory>()
         val listPickupTest = ArrayList<Trajectory>()
         val listHighGoal = ArrayList<Trajectory>()
+        val listWobbleFail = ArrayList<Trajectory>()
         setZone(FOUR)
         System.out.println("Angle:   " + Math.toDegrees( angleFromTo(RINGS_ACTUAL, SHOOT_HIGHGOAL)).toString())
 
@@ -458,6 +462,18 @@ object TrajectoryGen {
             }
         listPowershot.add(trajWobblePickupToDropoffAlign)
         this.trajWobblePickupToDropoffAlign = trajWobblePickupToDropoffAlign
+
+
+        // If 2nd wobble pickup fails, park early
+        var trajWobblePickupToEarlyPark: Trajectory =
+            trajectoryBuilder(trajWobbleAlignToWobblePickup.end(), wobblePickupRotationRadians + 180.0.toRadians)
+                .lineToConstantHeading(wobblePickupAlign.vec())
+                .splineToSplineHeading(PARK_RAMP,90.0.toRadians)
+                .build();
+        listPowershot.add(trajWobblePickupToEarlyPark)
+        listWobbleFail.add(trajWobblePickupToEarlyPark)
+        this.trajWobblePickupToEarlyPark = trajWobblePickupToEarlyPark
+
 
 
         // Dropoff Second WobbleGoal
